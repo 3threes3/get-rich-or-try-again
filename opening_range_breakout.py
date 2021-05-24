@@ -28,7 +28,6 @@ cursor.execute("""
 stocks = cursor.fetchall()
 symbols = [stock['symbol'] for stock in stocks]
 
-
 api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
 # Actually yesterday to prevent timezone issues when demoing 
