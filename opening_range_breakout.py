@@ -37,6 +37,8 @@ current_date = (date.today() - timedelta(days=1)).isoformat()
 start_minute_bar = f"{current_date} 09:30:00-04:00"
 end_minute_bar = f"{current_date} 09:45:00-04:00"
 
+print(current_date)
+
 orders = api.list_orders(status='all', limit=500, after=f'{current_date}T09:30:00-04:00')
 existing_order_symbols = [order.symbol for order in orders]
 print(existing_order_symbols)
@@ -57,7 +59,7 @@ for symbol in symbols:
 
         after_opening_range_mask = minute_bars.index >= end_minute_bar
         after_opening_range_bars = minute_bars.loc[after_opening_range_mask]
-        print(f'############## {symbol} #############')
+        print(f'############## {symbol} with a high of {opening_range_high} #############')
         print(after_opening_range_bars)
 
         after_opening_range_breakout = after_opening_range_bars[after_opening_range_bars['close'] > opening_range_high]
@@ -88,6 +90,10 @@ for symbol in symbols:
             else:
                 print(f'Conditions met, but order for {symbol} already existing. Skipping...')
                 messages.append(f'Conditions met, but order for {symbol} already existing.')
+
+        else:
+            print(f'Initial conditions met but no point through the day ideal to buy for {symbol}')
+            messages.append(f'Initial conditions met but no point through the day ideal to buy for {symbol}')
             
     else:
         messages.append(f'Unable to retrieve sufficient data to place order for {symbol}')
