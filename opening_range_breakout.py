@@ -68,7 +68,7 @@ for symbol in symbols:
             if symbol not in existing_order_symbols:
                 limit_price = after_opening_range_breakout.iloc[0]['close']
 
-                messages.append(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high}\n\n{after_opening_range_breakout.iloc[0]['close']}\n\n")
+                messages.append(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high} at {after_opening_range_breakout.iloc[0]}")
                 
                 print(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high} at {after_opening_range_breakout.iloc[0]}")
 
