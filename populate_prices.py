@@ -1,6 +1,8 @@
 import sqlite3, config
 import alpaca_trade_api as tradeapi
+import tulipy, numpy
 from datetime import datetime as dt
+from datetime import date, timedelta
 
 connection = sqlite3.connect(config.DB_FILE)
 
@@ -48,11 +50,22 @@ for i in range(0, len(symbols), chunk_size):
 
         for bar in barsets[symbol]:
 
+            recent_closes = [bar.c for bar in barsets[symbol]]
+
+            yesterday = date.today() - timedelta(days=3)
+
+            if len(recent_closes) >= 50 and yesterday.isoformat() == bar.t.date().isoformat():
+                sma_20 = tulipy.sma(numpy.array(recent_closes), period=20)[-1]
+                sma_50 = tulipy.sma(numpy.array(recent_closes), period=50)[-1]
+                rsi_14 = tulipy.rsi(numpy.array(recent_closes), period=14)[-1]
+            else: 
+                sma_20, sma_50, rsi_14 = None, None, None
+
             if current_info_date is None or bar.t.date() > dt.strptime(current_info_date, "%Y-%m-%d").date():
                 cursor.execute("""
-                    INSERT INTO stock_price (stock_id, date, open, high, low, close, volume)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (stock_id, bar.t.date(), bar.o, bar.h, bar.l, bar.c, bar.v))
+                    INSERT INTO stock_price (stock_id, date, open, high, low, close, volume, sma_20, sma_50, rsi_14)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (stock_id, bar.t.date(), bar.o, bar.h, bar.l, bar.c, bar.v, sma_20, sma_50, rsi_14))
 
 connection.commit()
 
