@@ -29,7 +29,7 @@ for row in rows:
 api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
 
-# Saving the date for which we already have data based on the last stock saved on the dictionary
+# Guardamos la fecha más reciente de la cual ya tenemos información en nuestra base de datos
 stock_id = stock_dict[symbol] 
 cursor.execute("""SELECT max(date) from stock_price where stock_id = (?)
  """, (stock_id,))
@@ -52,7 +52,7 @@ for i in range(0, len(symbols), chunk_size):
 
             recent_closes = [bar.c for bar in barsets[symbol]]
 
-            yesterday = date.today() - timedelta(days=3)
+            yesterday = date.today() - timedelta(days=1)
 
             if len(recent_closes) >= 50 and yesterday.isoformat() == bar.t.date().isoformat():
                 sma_20 = tulipy.sma(numpy.array(recent_closes), period=20)[-1]
