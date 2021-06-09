@@ -191,3 +191,7 @@ def strategy(request: Request, strategy_id):
     stocks = cursor.fetchall()
 
     return templates.TemplateResponse("strategy.html", {"request": request, "stocks": stocks, "strategy": strategy})
+
+@app.get("/login")
+def login_page(request: Request):
+    return templates.TemplateResponse("test.html", {"request": request})
