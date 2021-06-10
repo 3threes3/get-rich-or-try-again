@@ -1,5 +1,7 @@
 import sqlite3, config
 # import populate_stocks, populate_prices
+from opening_range_breakout import place_opening_range_breakout_orders
+from opening_range_breakdown import place_opening_range_breakdown_orders
 import alpaca_trade_api as tradeapi
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
@@ -317,6 +319,12 @@ def register(request: Request, username: str = Form(...), password: str = Form(.
 
     return templates.TemplateResponse("sign_in.html", {"request": request, "new_user": "Account created. You can now log in."})
 
-
-
-
+@app.get("/place_order/{strategy_id}")
+def stock_detail(request: Request, strategy_id):
+    if strategy_id == "1":
+        print("actually going in")
+        place_opening_range_breakout_orders()
+    elif strategy_id == "2": 
+        print("its the second one")
+        place_opening_range_breakdown_orders()
+    return RedirectResponse(url=f"/strategy/{strategy_id}", status_code=303)

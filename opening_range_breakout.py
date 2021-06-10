@@ -8,104 +8,122 @@ from datetime import date, datetime, timedelta, timezone
 from timezone import is_dst
 from helpers import calculate_quantity
 
-context = ssl.create_default_context()
+def place_opening_range_breakout_orders():
 
-connection = sqlite3.connect(config.DB_FILE)
-connection.row_factory = sqlite3.Row
+    context = ssl.create_default_context()
 
-cursor = connection.cursor()
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
 
-cursor.execute("""
-    SELECt id FROM strategy WHERE name = 'opening_range_breakout'
-""")
+    cursor = connection.cursor()
 
-strategy_id = cursor.fetchone()['id']
+    cursor.execute("""
+        SELECt id FROM strategy WHERE name = 'opening_range_breakout'
+    """)
 
-cursor.execute("""
-    SELECT symbol, name 
-    FROM stock 
-    JOIN stock_strategy on stock_strategy.stock_id = stock.id
-    WHERE stock_strategy.strategy_id = ?
-""", (strategy_id,))
+    strategy_id = cursor.fetchone()['id']
 
-stocks = cursor.fetchall()
-symbols = [stock['symbol'] for stock in stocks]
+    # cursor.execute("""
+    #     SELECT symbol, name 
+    #     FROM stock 
+    #     JOIN stock_strategy on stock_strategy.stock_id = stock.id
+    #     WHERE stock_strategy.strategy_id = ?
+    # """, (strategy_id,))
 
-api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
+    username = config.USERNAME
 
-# Usando el día de ayer para prevenir problemas durante demos
-current_date = (date.today() - timedelta(days=1)).isoformat()
+    cursor.execute("""
+        SELECT id FROM users
+        WHERE username = ?
+    """, (username,))
 
-if is_dst():
-    start_minute_bar = f"{current_date} 09:30:00-05:00"
-    end_minute_bar = f"{current_date} 09:45:00-05:00"
-else: 
-    start_minute_bar = f"{current_date} 09:30:00-04:00"
-    end_minute_bar = f"{current_date} 09:45:00-04:00"
+    user_id = cursor.fetchone()
+    current_id = user_id[0]
 
-orders = api.list_orders(status='all', limit=500, after=f'{current_date}T09:30:00-05:00')
-existing_order_symbols = [order.symbol for order in orders if order.status != 'canceled']
-print(existing_order_symbols)
+    cursor.execute("""
+            SELECT symbol, name
+            FROM stock JOIN stock_strategy on stock_strategy.stock_id = stock.id
+            WHERE strategy_id = ?
+            AND user_id = ?
+        """, (strategy_id, current_id,))
 
-messages = []
+    stocks = cursor.fetchall()
+    symbols = [stock['symbol'] for stock in stocks]
 
-for symbol in symbols:
-    minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
+    api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
-    opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
-    opening_range_bars = minute_bars.loc[opening_range_mask]
+    # Usando el día de ayer para prevenir problemas durante demos
+    current_date = (date.today() - timedelta(days=1)).isoformat()
 
-    if not opening_range_bars.empty:
+    if is_dst():
+        start_minute_bar = f"{current_date} 09:30:00-05:00"
+        end_minute_bar = f"{current_date} 09:45:00-05:00"
+    else: 
+        start_minute_bar = f"{current_date} 09:30:00-04:00"
+        end_minute_bar = f"{current_date} 09:45:00-04:00"
 
-        opening_range_low = opening_range_bars['low'].min()
-        opening_range_high = opening_range_bars['high'].max()
-        opening_range = opening_range_high - opening_range_low
+    orders = api.list_orders(status='all', limit=500, after=f'{current_date}T09:30:00-05:00')
+    existing_order_symbols = [order.symbol for order in orders if order.status != 'canceled']
 
-        after_opening_range_mask = minute_bars.index >= end_minute_bar
-        after_opening_range_bars = minute_bars.loc[after_opening_range_mask]
-        print(f'############## {symbol} with a high of {opening_range_high} #############')
-        print(after_opening_range_bars)
+    messages = []
 
-        after_opening_range_breakout = after_opening_range_bars[after_opening_range_bars['close'] > opening_range_high]
+    for symbol in symbols:
+        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
 
-        if not after_opening_range_breakout.empty:
-            if symbol not in existing_order_symbols:
-                limit_price = after_opening_range_breakout.iloc[0]['close']
+        opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
+        opening_range_bars = minute_bars.loc[opening_range_mask]
 
-                messages.append(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high} at {after_opening_range_breakout.iloc[0]}")
-                
-                print(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high} at {after_opening_range_breakout.iloc[0]}")
+        if not opening_range_bars.empty:
 
-                api.submit_order(
-                    symbol=symbol,
-                    side='buy',
-                    type='limit', 
-                    qty=calculate_quantity(limit_price),
-                    time_in_force='day',
-                    order_class='bracket',
-                    limit_price = limit_price,
-                    take_profit=dict(
-                        limit_price=limit_price + opening_range + 0.02,
-                    ),
-                    stop_loss=dict(
-                        stop_price=limit_price - opening_range - 0.2,
+            opening_range_low = opening_range_bars['low'].min()
+            opening_range_high = opening_range_bars['high'].max()
+            opening_range = opening_range_high - opening_range_low
+
+            after_opening_range_mask = minute_bars.index >= end_minute_bar
+            after_opening_range_bars = minute_bars.loc[after_opening_range_mask]
+            print(f'############## {symbol} with a high of {opening_range_high} #############')
+            print(after_opening_range_bars)
+
+            after_opening_range_breakout = after_opening_range_bars[after_opening_range_bars['close'] > opening_range_high]
+
+            if not after_opening_range_breakout.empty:
+                if symbol not in existing_order_symbols:
+                    limit_price = after_opening_range_breakout.iloc[0]['close']
+
+                    messages.append(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high} at {after_opening_range_breakout.iloc[0]}")
+                    
+                    print(f"Placing order for {symbol} at {limit_price}, closed above {opening_range_high} at {after_opening_range_breakout.iloc[0]}")
+
+                    api.submit_order(
+                        symbol=symbol,
+                        side='buy',
+                        type='limit', 
+                        qty=calculate_quantity(limit_price),
+                        time_in_force='day',
+                        order_class='bracket',
+                        limit_price = limit_price,
+                        take_profit=dict(
+                            limit_price=limit_price + opening_range + 0.02,
+                        ),
+                        stop_loss=dict(
+                            stop_price=limit_price - opening_range - 0.2,
+                        )
                     )
-                )
+                else:
+                    print(f'Conditions met, but order for {symbol} already existing. Skipping...')
+                    messages.append(f'Conditions met, but order for {symbol} already existing.')
+
             else:
-                print(f'Conditions met, but order for {symbol} already existing. Skipping...')
-                messages.append(f'Conditions met, but order for {symbol} already existing.')
-
+                print(f'Initial conditions met but no point through the day ideal to buy for {symbol}')
+                messages.append(f'Initial conditions met but no point through the day ideal to buy for {symbol}')
+                
         else:
-            print(f'Initial conditions met but no point through the day ideal to buy for {symbol}')
-            messages.append(f'Initial conditions met but no point through the day ideal to buy for {symbol}')
-            
-    else:
-        messages.append(f'Unable to retrieve sufficient data to place order for {symbol}')
+            messages.append(f'Unable to retrieve sufficient data to place order for {symbol}')
 
-print(messages)
+    print(messages)
 
-with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
-    server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
-    email_message = f'Subject: Trade Notifications for {current_date}\n\n'
-    email_message += "\n\n".join(messages)
-    server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, email_message)
+    with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
+        server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
+        email_message = f'Subject: Trade Notifications for {current_date}\n\n'
+        email_message += "\n\n".join(messages)
+        server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, email_message)
