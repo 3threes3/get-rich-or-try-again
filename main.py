@@ -15,6 +15,12 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 def index(request: Request):
+
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("welcome.html", {"request": request, "failure": "You need to be logged in for that."})
+
     stock_filter = request.query_params.get('filter', False)
 
     connection = sqlite3.connect(config.DB_FILE)
