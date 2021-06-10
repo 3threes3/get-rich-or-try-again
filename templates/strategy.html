@@ -1,14 +1,17 @@
 {% extends "layout.html" %}
 
 {% block content %}
-    <h1><a href="/">Stocks</a>
+    <h1><a href="/">Back to index</a>
         <i class="angle double right icon"></i>
         {{ strategy.name }}
     </h1>
 
-    <h2>Stocks</h2>
+    <h2>Stocks on your strategy list</h2>
     <div>
-        <a href="/place_order/{{ strategy.id }}">PLACE THE FUCKING ORDERS</a></div>
+        <button class="ui right labeled icon button" onclick="location.href='/place_order/{{ strategy.id }}'">
+            <i class="dollar icon"></i>
+            Place orders
+          </button>
     <table class="ui striped table">
         <thead>
             <tr>

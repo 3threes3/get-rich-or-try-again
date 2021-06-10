@@ -24,6 +24,14 @@
           <p>You may now log-in with the username you have chosen</p>
         </div>
         {% endif %}
+        {% if success %}
+        <div class="ui success message">
+          <div class="header">
+            Your personal details have been updated
+          </div>
+          <p>{{ success }}</p>
+        </div>
+        {% endif %}
         <div class="ui fluid card">
           <div class="content">
             <form class="ui form" method="post" action="/user_entry">

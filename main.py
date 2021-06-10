@@ -462,7 +462,9 @@ def user_entry(request: Request, username: str = Form(...), current_password: st
         
     connection.commit()
 
-    return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "success": "Changes made accordingly"})
+    config.USERNAME = "" 
+
+    return templates.TemplateResponse("sign_in.html", {"request": request, "success": "Changes made accordingly. You've been logged out. Please log in again with your updated credentials."})
 
 
 
