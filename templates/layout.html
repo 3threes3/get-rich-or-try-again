@@ -19,9 +19,14 @@
                 Order History
             </a>
             <div class="right menu">
-            <a class="ui item">
-                Logout
+            {% if username %}
+                 <a class='item'> Welcome {{ username }}</a>
+                 <a href="/logout" class='item'> Logout </a>
+            {% else %}
+            <a href="/sign_in" class="item">
+                Login
             </a>
+            {% endif %}
             </div>
         </div>
 

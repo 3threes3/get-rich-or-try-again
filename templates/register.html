@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="page-login">
+    <div class="ui centered grid container">
+      <div class="nine wide column">
+        {% if failure %}
+        <div class="ui icon warning message">
+            <i class="lock icon"></i>
+            <div class="content">
+              <div class="header">
+                Login failed!
+              </div>
+              <p>{{ failure }}</p>
+            </div>
+          </div>
+        {% endif %}
+        <div class="ui fluid card">
+          <div class="content">
+            <form class="ui form" method="post" action="/new_user">
+              <div class="field">
+                <label>User</label>
+              <input type="text" name="username" placeholder="Enter your username" />
+              </div>
+              <div class="field">
+                <label>Password</label>
+              <input type="password" name="password" placeholder="Enter your password" />
+              </div>
+              <button class="ui primary labeled icon button" type="submit">
+                <i class="unlock alternate icon"></i>
+                Register
+              </button>
+          </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
