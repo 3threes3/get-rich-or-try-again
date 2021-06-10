@@ -1,13 +1,14 @@
 import sqlite3, config
+# import populate_stocks, populate_prices
 import alpaca_trade_api as tradeapi
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from datetime import date, timedelta
-
 from starlette.responses import RedirectResponse
 
 app = FastAPI()
+
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
@@ -103,10 +104,16 @@ def index(request: Request):
     for row in indicator_rows:
         indicator_values[row['symbol']] = row
 
-    return templates.TemplateResponse("index.html", {"request": request, "stocks": rows, "indicator_values": indicator_values})
+    return templates.TemplateResponse("index.html", {"request": request, "stocks": rows, "indicator_values": indicator_values, "username": config.USERNAME})
 
 @app.get("/stock/{symbol}")
 def stock_detail(request: Request, symbol):
+
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+
     connection = sqlite3.connect(config.DB_FILE)
     connection.row_factory = sqlite3.Row
 
@@ -130,16 +137,28 @@ def stock_detail(request: Request, symbol):
 
     prices = cursor.fetchall()
 
-    return templates.TemplateResponse("stock_detail.html", {"request": request, "stock": row, "bars": prices, "strategies": strategies})
+    return templates.TemplateResponse("stock_detail.html", {"request": request, "stock": row, "bars": prices, "strategies": strategies, "username": username})
 
 @app.post("/apply_strategy")
 def apply_strategy(strategy_id: int = Form(...), stock_id: int = Form(...)):
+
+    username = config.USERNAME
+    
     connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
 
     cursor.execute("""
-        INSERT INTO stock_strategy (stock_id, strategy_id) VALUES (?, ?)    
-    """, (stock_id, strategy_id))
+        SELECT id FROM users
+        WHERE username = ?
+    """, (username,))
+
+    user_id = cursor.fetchone()
+    current_id = user_id[0]
+
+    cursor.execute("""
+        INSERT INTO stock_strategy (stock_id, strategy_id, user_id) VALUES (?, ?, ?)    
+    """, (stock_id, strategy_id, current_id))
 
     connection.commit()
     
@@ -147,6 +166,12 @@ def apply_strategy(strategy_id: int = Form(...), stock_id: int = Form(...)):
 
 @app.get("/strategies")
 def strategies(request: Request):
+    
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+
     connection = sqlite3.connect(config.DB_FILE)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
@@ -157,18 +182,29 @@ def strategies(request: Request):
 
     strategies = cursor.fetchall()
 
-    return templates.TemplateResponse("strategies.html", {"request": request, "strategies": strategies})
+    return templates.TemplateResponse("strategies.html", {"request": request, "strategies": strategies, "username": username})
 
 @app.get("/orders")
 def orders(request: Request):
 
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+
     api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
     orders = api.list_orders(status='all')
 
-    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders})
+    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders, "username": username})
 
 @app.get("/strategy/{strategy_id}")
 def strategy(request: Request, strategy_id):
+
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+
     connection = sqlite3.connect(config.DB_FILE)
     connection.row_factory = sqlite3.Row
 
@@ -183,11 +219,104 @@ def strategy(request: Request, strategy_id):
     strategy = cursor.fetchone()
 
     cursor.execute("""
+        SELECT id FROM users
+        WHERE username = ?
+    """, (username,))
+
+    user_id = cursor.fetchone()
+    current_id = user_id[0]
+
+    cursor.execute("""
         SELECT symbol, name
         FROM stock JOIN stock_strategy on stock_strategy.stock_id = stock.id
         WHERE strategy_id = ?
-    """, (strategy_id,))
+        AND user_id = ?
+    """, (strategy_id, current_id,))
 
     stocks = cursor.fetchall()
 
-    return templates.TemplateResponse("strategy.html", {"request": request, "stocks": stocks, "strategy": strategy})
+    return templates.TemplateResponse("strategy.html", {"request": request, "stocks": stocks, "strategy": strategy, "username": username})
+
+
+@app.get("/sign_in")
+def sign_in(request: Request):
+    return templates.TemplateResponse("sign_in.html", {"request": request})
+
+@app.post("/sign_in")
+def sign_in(request: Request):
+    return templates.TemplateResponse("sign_in.html", {"request": request})
+
+@app.get("/logout")
+def sign_in(request: Request):
+    config.USERNAME = "" 
+    return templates.TemplateResponse("sign_in.html", {"request": request})
+
+
+@app.post("/user_entry")
+def user_entry(request: Request, username: str = Form(...), password: str = Form(...)):
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT count(*) 
+        FROM users
+        WHERE username = ?
+    """, (username,))
+
+    users = cursor.fetchone()
+
+    if users [0] == 0:
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "We couldn't find a username like that"})
+    else: 
+       cursor.execute("""
+            SELECT password 
+            FROM users
+            WHERE username = ?
+        """, (username,))
+
+    actual_password = cursor.fetchone()
+
+    if actual_password[0] == password:
+        config.USERNAME = username
+        return RedirectResponse(url=f"/", status_code=303)
+
+    return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "Username and password do not match our records"})
+
+@app.get("/register")
+def register(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+@app.post("/new_user")
+def register(request: Request, username: str = Form(...), password: str = Form(...)):
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT username
+        FROM users
+    """)
+
+    users = cursor.fetchall()
+
+    usernames = []
+    for user in users:
+        usernames.append(user[0])
+    
+    if username in usernames:
+        return templates.TemplateResponse("register.html", {"request": request, "failure": "Username already exists"})
+
+    cursor.execute("""
+        INSERT INTO users (username, password) VALUES (?, ?)    
+    """, (username, password))
+
+    connection.commit()
+
+    return templates.TemplateResponse("sign_in.html", {"request": request, "new_user": "Account created. You can now log in."})
+
+
+
+

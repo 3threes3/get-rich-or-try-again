@@ -5,6 +5,15 @@ connection = sqlite3.connect(config.DB_FILE)
 cursor = connection.cursor()
 
 cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY, 
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        admin BOOLEAN DEFAULT 0 NOT NULL
+    )
+""")
+
+cursor.execute("""
     CREATE TABLE IF NOT EXISTS stock (
         id INTEGER PRIMARY KEY, 
         symbol TEXT NOT NULL UNIQUE, 
@@ -41,8 +50,10 @@ cursor.execute("""
     CREATE TABLE IF NOT EXISTS stock_strategy (
         stock_id INTEGER NOT NULL,
         strategy_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
         FOREIGN KEY (stock_id) REFERENCES stock (id)
         FOREIGN KEY (strategy_id) REFERENCES strategy (id)
+        FOREIGN KEY (user_id) REFERENCES users (id)
         )
 """)
 
