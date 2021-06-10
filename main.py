@@ -260,7 +260,7 @@ def sign_in(request: Request):
 @app.get("/logout")
 def sign_in(request: Request):
     config.USERNAME = "" 
-    return templates.TemplateResponse("sign_in.html", {"request": request})
+    return templates.TemplateResponse("welcome.html", {"request": request})
 
 
 @app.post("/user_entry")
