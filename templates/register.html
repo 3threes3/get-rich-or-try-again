@@ -21,11 +21,11 @@
             <form class="ui form" method="post" action="/new_user">
               <div class="field">
                 <label>User</label>
-              <input type="text" name="username" placeholder="Enter your username" />
+              <input type="text" name="username" placeholder="Enter your username" required/>
               </div>
               <div class="field">
                 <label>Password</label>
-              <input type="password" name="password" placeholder="Enter your password" />
+              <input type="password" name="password" placeholder="Enter your password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required/>
               </div>
               <button class="ui primary labeled icon button" type="submit">
                 <i class="unlock alternate icon"></i>

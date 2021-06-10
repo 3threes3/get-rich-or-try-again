@@ -23,13 +23,6 @@ def place_opening_range_breakdown_orders():
 
     strategy_id = cursor.fetchone()['id']
 
-    # cursor.execute("""
-    #     SELECT symbol, name 
-    #     FROM stock 
-    #     JOIN stock_strategy on stock_strategy.stock_id = stock.id
-    #     WHERE stock_strategy.strategy_id = ?
-    # """, (strategy_id,))
-
     username = config.USERNAME
 
     cursor.execute("""
@@ -72,7 +65,7 @@ def place_opening_range_breakdown_orders():
     messages = []
 
     for symbol in symbols:
-        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
+        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
 
         opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
         opening_range_bars = minute_bars.loc[opening_range_mask]
@@ -135,3 +128,10 @@ def place_opening_range_breakdown_orders():
         email_message = f'Subject: Trade Notifications for {current_date}\n\n'
         email_message += "\n\n".join(messages)
         server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, email_message)
+
+    cursor.execute("""
+        DELETE FROM stock_strategy
+        WHERE user_id = ?
+    """, (current_id,))
+
+    connection.commit()

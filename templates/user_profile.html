@@ -16,34 +16,34 @@
             </div>
           </div>
         {% endif %}
-        {% if new_user %}
+        {% if success %}
         <div class="ui success message">
           <div class="header">
-            Your user registration was successful.
+            Your personal details have been updated
           </div>
-          <p>You may now log-in with the username you have chosen</p>
+          <p>Remember them for your future logins</p>
         </div>
         {% endif %}
         <div class="ui fluid card">
           <div class="content">
-            <form class="ui form" method="post" action="/user_entry">
+            <form class="ui form" method="post" action="/user_change">
               <div class="field">
-                <label>User</label>
-              <input type="text" name="username" placeholder="Enter your username" required/>
+                <label>Username</label>
+              <input type="text" name="username" value="{{ username }}" />
               </div>
               <div class="field">
-                <label>Password</label>
-              <input type="password" name="password" placeholder="Enter your password" required/>
+                <label>Current Password</label>
+              <input type="password" name="current_password" value="" required/>
+              </div>
+              <div class="field">
+                <label>New Password</label>
+              <input type="password" name="new_password" value="" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters"/>
               </div>
               <button class="ui primary labeled icon button" type="submit">
                 <i class="unlock alternate icon"></i>
-                Login
+                Change
               </button>
           </form>
-          <button class="ui primary labeled icon button" type="submit" onclick="location.href='/register'">
-            <i class="unlock alternate icon"></i>
-            Register
-          </button>
           </div>
         </div>
       </div>

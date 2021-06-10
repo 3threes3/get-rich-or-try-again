@@ -2,12 +2,15 @@ import sqlite3, config
 # import populate_stocks, populate_prices
 from opening_range_breakout import place_opening_range_breakout_orders
 from opening_range_breakdown import place_opening_range_breakdown_orders
+from delete_user import delete_user
 import alpaca_trade_api as tradeapi
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from datetime import date, timedelta
 from starlette.responses import RedirectResponse
+from typing import Optional
+import base64
 
 app = FastAPI()
 
@@ -286,7 +289,13 @@ def user_entry(request: Request, username: str = Form(...), password: str = Form
 
     actual_password = cursor.fetchone()
 
-    if actual_password[0] == password:
+    base64_string = str(actual_password[0])
+    base64_bytes = base64_string.encode("ascii")
+
+    actual_string_bytes = base64.b64decode(base64_bytes)
+    actual_string = actual_string_bytes.decode("ascii")
+
+    if str(actual_string) == str(password):
         config.USERNAME = username
         return RedirectResponse(url=f"/", status_code=303)
 
@@ -316,10 +325,14 @@ def register(request: Request, username: str = Form(...), password: str = Form(.
     
     if username in usernames:
         return templates.TemplateResponse("register.html", {"request": request, "failure": "Username already exists"})
+    
+    password_bytes = password.encode("ascii")
+    base64_bytes = base64.b64encode(password_bytes)
+    base64_string = base64_bytes.decode("ascii")
 
     cursor.execute("""
         INSERT INTO users (username, password) VALUES (?, ?)    
-    """, (username, password))
+    """, (username, base64_string))
 
     connection.commit()
 
@@ -328,9 +341,129 @@ def register(request: Request, username: str = Form(...), password: str = Form(.
 @app.get("/place_order/{strategy_id}")
 def stock_detail(request: Request, strategy_id):
     if strategy_id == "1":
-        print("actually going in")
         place_opening_range_breakout_orders()
     elif strategy_id == "2": 
-        print("its the second one")
         place_opening_range_breakdown_orders()
     return RedirectResponse(url=f"/strategy/{strategy_id}", status_code=303)
+
+@app.get("/admin")
+def admin(request: Request):
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+    
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT admin FROM users
+        WHERE username = ?
+    """, (username,))
+
+    is_admin = cursor.fetchone()
+
+    if is_admin[0] == 1:
+        connection = sqlite3.connect(config.DB_FILE)
+        connection.row_factory = sqlite3.Row
+
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT id, username, admin
+            FROM users
+        """)
+
+        users = cursor.fetchall()
+
+        return templates.TemplateResponse("admin.html", {"request": request, "users": users, "username": username})
+
+    else:
+        config.USERNAME = "" 
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "An admin account is required for that operation."})
+
+@app.get("/delete_user/{user_id}")
+def delete(request: Request, user_id):
+    delete_user(user_id)
+    return RedirectResponse(url="/admin", status_code=303)
+
+@app.get("/profile/{username}")
+def strategy(request: Request, username):
+
+    username = config.USERNAME
+
+    if username == "":
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+
+    return templates.TemplateResponse("user_profile.html", {"request": request, "username": username})
+
+@app.post("/user_change")
+def user_entry(request: Request, username: str = Form(...), current_password: str = Form(...), new_password: Optional[str] = Form(None)):
+
+    
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+            SELECT password 
+            FROM users
+            WHERE username = ?
+        """, (config.USERNAME,))
+
+    actual_password = cursor.fetchone()
+
+    base64_string = str(actual_password[0])
+    base64_bytes = base64_string.encode("ascii")
+
+    actual_string_bytes = base64.b64decode(base64_bytes)
+    actual_string = actual_string_bytes.decode("ascii")
+
+    if current_password == actual_string:
+
+        if username != config.USERNAME:
+
+            cursor.execute("""
+                SELECT count(*) 
+                FROM users
+                WHERE username = ?
+            """, (username,))
+
+            users = cursor.fetchone()
+
+            if users[0] != 0:
+                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Username not available"})
+            else:
+                cursor.execute("""
+                    UPDATE users
+                    SET username = ?
+                    WHERE username = ?
+                """, (username, config.USERNAME))
+
+                config.USERNAME = username
+
+        if new_password is not None:
+
+            password_bytes = new_password.encode("ascii")
+            base64_bytes = base64.b64encode(password_bytes)
+            base64_string = base64_bytes.decode("ascii")
+
+            cursor.execute("""
+                        UPDATE users
+                        SET password = ?
+                        WHERE username = ?
+                    """, (base64_string, config.USERNAME))
+
+               
+    else:
+        return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Wrong Password"})
+        
+    connection.commit()
+
+    return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "success": "Changes made accordingly"})
+
+
+
+

@@ -18,9 +18,13 @@
             <a href="/orders" class='{% if active_page == "/orders" %} active {% endif %} item'>
                 Order History
             </a>
+            <a href="/admin" class='{% if active_page == "/admin" %} active {% endif %} item'>
+                Admin Panel
+            </a>
             <div class="right menu">
             {% if username %}
                  <a class='item'> Welcome {{ username }}</a>
+                 <a href="/profile/{{ username }}" class='item'> My Profile </a>
                  <a href="/logout" class='item'> Logout </a>
             {% else %}
             <a href="/sign_in" class="item">

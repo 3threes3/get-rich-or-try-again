@@ -56,19 +56,19 @@ def place_opening_range_breakout_orders():
     current_date = (date.today() - timedelta(days=1)).isoformat()
 
     if is_dst():
-        start_minute_bar = f"{current_date} 09:30:00-05:00"
-        end_minute_bar = f"{current_date} 09:45:00-05:00"
+        start_minute_bar = f"{current_date} 16:30:00-00:00"
+        end_minute_bar = f"{current_date} 16:45:00-00:00"
     else: 
-        start_minute_bar = f"{current_date} 09:30:00-04:00"
-        end_minute_bar = f"{current_date} 09:45:00-04:00"
+        start_minute_bar = f"{current_date} 15:30:00-00:00"
+        end_minute_bar = f"{current_date} 15:45:00-00:00"
 
-    orders = api.list_orders(status='all', limit=500, after=f'{current_date}T09:30:00-05:00')
+    orders = api.list_orders(status='all', limit=500)
     existing_order_symbols = [order.symbol for order in orders if order.status != 'canceled']
 
     messages = []
 
     for symbol in symbols:
-        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
+        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
 
         opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
         opening_range_bars = minute_bars.loc[opening_range_mask]
@@ -120,10 +120,15 @@ def place_opening_range_breakout_orders():
         else:
             messages.append(f'Unable to retrieve sufficient data to place order for {symbol}')
 
-    print(messages)
-
     with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
         server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
         email_message = f'Subject: Trade Notifications for {current_date}\n\n'
         email_message += "\n\n".join(messages)
         server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, email_message)
+
+    cursor.execute("""
+        DELETE FROM stock_strategy
+        WHERE user_id = ?
+    """, (current_id,))
+
+    connection.commit()
