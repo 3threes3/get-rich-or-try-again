@@ -106,6 +106,7 @@ def place_opening_range_breakout_orders():
                         )
                     except Exception as e:
                         print(f'Could not submit order. Error: {e}')
+                        messages.append(f'Could not submit order for {symbol}. Error: {e}')
                         
                 else:
                     print(f'Conditions met, but order for {symbol} already existing. Skipping...')

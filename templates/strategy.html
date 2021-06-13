@@ -6,7 +6,18 @@
         {{ strategy.name.replace("_", " ").title() }}
     </h1>
 
-    <h2>Stocks on your strategy list</h2>
+    {% if info %}
+        <div class="ui success icon message">
+            <i class="inbox icon"></i>
+            <div class="content">
+                <div class="header">
+                    Your order/s have been submitted.
+                </div>
+                <p>Please, check your email for further information.</p>
+            </div>
+        </div>
+    {% endif %}
+
     <div>
         <button class="ui right labeled icon button" onclick="location.href='/place_order/{{ strategy.id }}'">
             <i class="dollar icon"></i>

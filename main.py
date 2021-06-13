@@ -210,7 +210,7 @@ def orders(request: Request):
     return templates.TemplateResponse("orders.html", {"request": request, "orders": orders, "username": username})
 
 @app.get("/strategy/{strategy_id}")
-def strategy(request: Request, strategy_id):
+def strategy(request: Request, strategy_id, info: Optional[str] = None):
 
     username = config.USERNAME
 
@@ -247,7 +247,7 @@ def strategy(request: Request, strategy_id):
 
     stocks = cursor.fetchall()
 
-    return templates.TemplateResponse("strategy.html", {"request": request, "stocks": stocks, "strategy": strategy, "username": username})
+    return templates.TemplateResponse("strategy.html", {"request": request, "stocks": stocks, "strategy": strategy, "username": username, "info": info})
 
 
 @app.get("/sign_in")
@@ -345,7 +345,7 @@ def stock_detail(request: Request, strategy_id):
         place_opening_range_breakout_orders()
     elif strategy_id == "2": 
         place_opening_range_breakdown_orders()
-    return RedirectResponse(url=f"/strategy/{strategy_id}", status_code=303)
+    return RedirectResponse(url=f"/strategy/{strategy_id}?info=1", status_code=303)
 
 @app.get("/admin")
 def admin(request: Request):
