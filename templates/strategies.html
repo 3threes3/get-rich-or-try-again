@@ -5,14 +5,19 @@
 
 <h1>Strategies</h1>
 
-<table class="ui striped table">
+<div class="ui two column grid">
     {% for strategy in strategies %}
-    <tr>
-        <td><a href="/strategy/{{ strategy.id }}">
-            {{ strategy.name }}</a>
-        </td>
-    </tr>
+    <div class="column">
+      <div class="ui fluid card">
+        <div class="image">
+          <img src="\..\images\stock.png">
+        </div>
+        <div class="content">
+          <a href="/strategy/{{ strategy.id }}" class="header">{{ strategy.name }}</a>
+        </div>
+      </div>
+    </div>
     {% endfor %}
-</table>
+  </div>
 
 {% endblock %}
