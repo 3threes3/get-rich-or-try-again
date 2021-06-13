@@ -17,8 +17,6 @@
         {% endblock %}
     </head>
     <body>
-        
-
         <div class="ui massive labeled icon menu">
             <a href="/" class='{% if active_page == "/" %} active {% endif %} item'>
                 <i class="list icon"></i>
@@ -38,15 +36,15 @@
             </a>
             <div class="right menu">
             {% if username %}
-                 <a class='item'> 
+                <a class='item'> 
                     <i class="handshake icon"></i>
-                     Welcome, {{ username }}
+                    Welcome, {{ username }}
                 </a>
-                 <a href="/profile/{{ username }}" class='item'> 
+                <a href="/profile/{{ username }}" class='item'> 
                     <i class="black tie icon"></i>
                     My Profile 
                 </a>
-                 <a href="/logout" class='item'> 
+                <a href="/logout" class='item'> 
                     <i class="sign-out icon"></i>
                     Logout 
                 </a>
@@ -58,8 +56,6 @@
             {% endif %}
             </div>
         </div>
-
-
         <div class="ui container">
             {% block content %}
             {% endblock %}
