@@ -11,13 +11,20 @@
       <div class="ui fluid card">
         <div class="image">
             {% if strategy.name == "opening_range_breakout" %}
-                <img src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/opening_range_breakout.jpg?token=AKJD3J4GGEOISPJMQXTLIYDAZ5WIY">
+                <img src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/opening_range_breakout.jpg?token=AKJD3J6TR7ONWQMCVE4FSTLAZ5XQE">
             {% elif strategy.name == "opening_range_breakdown" %}
                 <img src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/opening_range_breakdown.jpg?token=AKJD3J3O3YBMWPXS3MZ7JRDAZ5XIK">
             {% endif %}
         </div>
         <div class="content">
-          <a href="/strategy/{{ strategy.id }}" class="header">{{ strategy.name }}</a>
+          <a href="/strategy/{{ strategy.id }}" class="header">{{ strategy.name.replace("_", " ").title() }}</a>
+          <div class="description">
+            {% if strategy.name == "opening_range_breakout" %}  
+                In simple words, the opening range breakout strategy means taking a position when price breaks above or below the higher value found in a pre-set amount of time.
+            {% elif strategy.name == "opening_range_breakdown" %}
+                In simple words, the opening range breakdown strategy means taking a position when price breaks above or below the higher value found in a pre-set amount of time.
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
