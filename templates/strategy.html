@@ -3,7 +3,7 @@
 {% block content %}
     <h1><a href="/">Back to index</a>
         <i class="angle double right icon"></i>
-        {{ strategy.name }}
+        {{ strategy.name.replace("_", " ").title() }}
     </h1>
 
     <h2>Stocks on your strategy list</h2>
