@@ -30,7 +30,7 @@ api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
 
 # Guardamos la fecha más reciente de la cual ya tenemos información en nuestra base de datos
-stock_id = stock_dict[symbol] 
+stock_id = 2023 
 cursor.execute("""SELECT max(date) from stock_price where stock_id = (?)
  """, (stock_id,))
 
@@ -61,12 +61,7 @@ for i in range(0, len(symbols), chunk_size):
             else: 
                 sma_20, sma_50, rsi_14 = None, None, None
 
-            # print("Current info: " + str(current_info_date))
-            # print("Bar info: " + str(bar.t.date()))
-            # print("Strip info: " + str(dt.strptime(current_info_date, "%Y-%m-%d").date()))
-
             if current_info_date is None or bar.t.date() > dt.strptime(current_info_date, "%Y-%m-%d").date():
-                # print("yeah for: " + str(bar.t.date()))
                 cursor.execute("""
                     INSERT INTO stock_price (stock_id, date, open, high, low, close, volume, sma_20, sma_50, rsi_14)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
