@@ -3,6 +3,7 @@ import sqlite3, config
 from opening_range_breakout import place_opening_range_breakout_orders
 from opening_range_breakdown import place_opening_range_breakdown_orders
 from delete_user import delete_user
+import smtplib, ssl
 import alpaca_trade_api as tradeapi
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
@@ -281,7 +282,7 @@ def user_entry(request: Request, username: str = Form(...), password: str = Form
     if users [0] == 0:
         return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "We couldn't find a username like that"})
     else: 
-       cursor.execute("""
+        cursor.execute("""
             SELECT password 
             FROM users
             WHERE username = ?
@@ -380,8 +381,19 @@ def admin(request: Request):
         return templates.TemplateResponse("admin.html", {"request": request, "users": users, "username": username})
 
     else:
+        
+
+        context = ssl.create_default_context()
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
+            server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
+            email_message = f'Subject: Unathorized user: {config.USERNAME} trying to enter Admin area\n\n'
+            email_message += f'\n\nThe user {config.USERNAME} has tried to acces the admin zone. Should this not be a known attempt, consider deleting said account.\n\n Sincerely, \n The team at Get Rich or Try Again'
+            server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, email_message)
+
         config.USERNAME = "" 
-        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "An admin account is required for that operation."})
+
+        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "An admin account is required for that operation. You've been logged out for safety."})
 
 @app.get("/delete_user/{user_id}")
 def delete(request: Request, user_id):
@@ -456,7 +468,6 @@ def user_entry(request: Request, username: str = Form(...), current_password: st
                         WHERE username = ?
                     """, (base64_string, config.USERNAME))
 
-               
     else:
         return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Wrong Password"})
         
