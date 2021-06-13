@@ -10,7 +10,11 @@
     <div class="column">
       <div class="ui fluid card">
         <div class="image">
-          <img src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/opening_range_breakdown.jpg?token=AKJD3J2MMDZJFZPBS5M3NCTAZ5VXU">
+            {% if strategy.name == "opening_range_breakout" %}
+                <img src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/opening_range_breakout.jpg?token=AKJD3J4GGEOISPJMQXTLIYDAZ5WIY">
+            {% elif strategy.name == "opening_range_breakdown" %}
+                <img src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/opening_range_breakdown.jpg?token=AKJD3J2MMDZJFZPBS5M3NCTAZ5VXU">
+            {% endif %}
         </div>
         <div class="content">
           <a href="/strategy/{{ strategy.id }}" class="header">{{ strategy.name }}</a>
