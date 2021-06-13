@@ -1,25 +1,25 @@
 {% extends "layout.html" %}
+{% block head %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/stock.png?token=AKJD3J6MPMSFPTUYX5GTZ3TAZRB6Y">
+{% endblock %}
+
 
 {% block content %}
 
 <div class="page-login">
-    <div class="ui centered grid container">
-      <div class="nine wide column">
-
-        
-        <div class="ui container">
-            <br>
-            <div class="ui one column centered grid">
-                <div class="ui buttons">
-                  <button class="ui primary button" onclick="location.href='/sign_in'"">Log in</button>
-                  <div class="or"></div>
-                  <button class="ui positive button" onclick="location.href='/register'"">Register</button>
-                </div>
-        </div>
-            <img class="ui image" src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/logo.png?token=AKJD3J64XCHTUWNXSP3AP3LAZMW36">
-        </div>
-      </div>
+  <br>
+  <div class="ui one column centered grid">
+    <div class="ui buttons">
+      <button class="ui primary button" onclick="location.href='/sign_in'"">Log in</button>
+      <div class="or"></div>
+      <button class="ui positive button" onclick="location.href='/register'"">Register</button>
     </div>
+  </div> 
+  <div class="ui one column centered grid">
+    <img class="ui image" src="https://raw.githubusercontent.com/3threes3/get-rich-or-try-again/master/images/logo.png?token=AKJD3J64XCHTUWNXSP3AP3LAZMW36">
   </div>
+</div>
 
 {% endblock %}
