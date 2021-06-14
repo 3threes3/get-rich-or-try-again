@@ -3,6 +3,7 @@ import sqlite3, config
 from opening_range_breakout import place_opening_range_breakout_orders
 from opening_range_breakdown import place_opening_range_breakdown_orders
 from delete_user import delete_user
+from make_admin import make_admin
 import smtplib, ssl
 import alpaca_trade_api as tradeapi
 from fastapi import FastAPI, Request, Form
@@ -280,8 +281,26 @@ def user_entry(request: Request, username: str = Form(...), password: str = Form
     users = cursor.fetchone()
 
     if users [0] == 0:
-        return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "We couldn't find a username like that"})
+
+        cursor.execute("""
+            SELECT count(*) 
+            FROM users
+            WHERE email = ?
+        """, (username,))
+
+        users = cursor.fetchone()
+
+        if users [0] == 0:
+            return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "We couldn't find a username/email like that"})
+        else:
+            using_email = True
+            cursor.execute("""
+                SELECT password 
+                FROM users
+                WHERE email = ?
+            """, (username,))
     else: 
+        using_email = False
         cursor.execute("""
             SELECT password 
             FROM users
@@ -297,7 +316,20 @@ def user_entry(request: Request, username: str = Form(...), password: str = Form
     actual_string = actual_string_bytes.decode("ascii")
 
     if str(actual_string) == str(password):
-        config.USERNAME = username
+        if using_email:
+            cursor.execute("""
+                    SELECT username 
+                    FROM users
+                    WHERE email = ?
+                """, (username,))
+        else:
+            cursor.execute("""
+                    SELECT username 
+                    FROM users
+                    WHERE username = ?
+                """, (username,))
+
+        config.USERNAME = cursor.fetchone()[0]
         return RedirectResponse(url=f"/", status_code=303)
 
     return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "Username and password do not match our records"})
@@ -307,14 +339,14 @@ def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 @app.post("/new_user")
-def register(request: Request, username: str = Form(...), password: str = Form(...)):
+def register(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...)):
     connection = sqlite3.connect(config.DB_FILE)
     connection.row_factory = sqlite3.Row
 
     cursor = connection.cursor()
 
     cursor.execute("""
-        SELECT username
+        SELECT username, email
         FROM users
     """)
 
@@ -323,17 +355,26 @@ def register(request: Request, username: str = Form(...), password: str = Form(.
     usernames = []
     for user in users:
         usernames.append(user[0])
+
+    print(usernames)
     
     if username in usernames:
         return templates.TemplateResponse("register.html", {"request": request, "failure": "Username already exists"})
+
+    emails = []
+    for user in users:
+        emails.append(user[1])
+
+    if email in emails:
+        return templates.TemplateResponse("register.html", {"request": request, "failure": "Email already in use"})
     
     password_bytes = password.encode("ascii")
     base64_bytes = base64.b64encode(password_bytes)
     base64_string = base64_bytes.decode("ascii")
 
     cursor.execute("""
-        INSERT INTO users (username, password) VALUES (?, ?)    
-    """, (username, base64_string))
+        INSERT INTO users (username, email, password) VALUES (?, ?, ?)    
+    """, (username, email, base64_string))
 
     connection.commit()
 
@@ -400,6 +441,11 @@ def delete(request: Request, user_id):
     delete_user(user_id)
     return RedirectResponse(url="/admin", status_code=303)
 
+@app.get("/make_admin/{user_id}")
+def delete(request: Request, user_id):
+    make_admin(user_id)
+    return RedirectResponse(url="/admin", status_code=303)
+
 @app.get("/profile/{username}")
 def strategy(request: Request, username):
 
@@ -407,11 +453,23 @@ def strategy(request: Request, username):
 
     if username == "":
         return templates.TemplateResponse("sign_in.html", {"request": request, "failure": "You need to be logged in for that."})
+    
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
 
-    return templates.TemplateResponse("user_profile.html", {"request": request, "username": username})
+    cursor.execute("""
+            SELECT email 
+            FROM users
+            WHERE username = ?
+        """, (username,))
+
+    email = cursor.fetchone()[0]
+
+    return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "email": email})
 
 @app.post("/user_change")
-def user_entry(request: Request, username: str = Form(...), current_password: str = Form(...), new_password: Optional[str] = Form(None)):
+def user_entry(request: Request, username: str = Form(...), email: Optional[str] = Form(...), current_password: str = Form(...), new_password: Optional[str] = Form(None)):
 
     
     connection = sqlite3.connect(config.DB_FILE)
@@ -434,6 +492,32 @@ def user_entry(request: Request, username: str = Form(...), current_password: st
     actual_string = actual_string_bytes.decode("ascii")
 
     if current_password == actual_string:
+
+        cursor.execute("""
+            SELECT email 
+            FROM users
+            WHERE username = ?
+        """, (username,))
+
+        current_email = cursor.fetchone()[0]
+
+        if current_email != email:
+            cursor.execute("""
+                SELECT count(*) 
+                FROM users
+                WHERE email = ?
+            """, (email,))
+
+            users = cursor.fetchone()
+
+            if users [0] != 0:
+                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Email already in use"})
+            else:
+                cursor.execute("""
+                    UPDATE users
+                    SET email = ?
+                    WHERE username = ?
+                """, (email, config.USERNAME))
 
         if username != config.USERNAME:
 

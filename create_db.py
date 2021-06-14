@@ -8,6 +8,7 @@ cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY, 
         username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         admin BOOLEAN DEFAULT 0 NOT NULL
     )

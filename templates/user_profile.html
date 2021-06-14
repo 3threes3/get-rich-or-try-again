@@ -32,12 +32,24 @@
               <input type="text" name="username" value="{{ username }}" />
               </div>
               <div class="field">
+                <label>Email</label>
+              <input type="email" name="email" value="{{ email }}"/>
+              </div>
+              <div class="field">
                 <label>Current Password</label>
               <input type="password" name="current_password" value="" required/>
               </div>
               <div class="field">
                 <label>New Password</label>
               <input type="password" name="new_password" value="" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters"/>
+              </div>
+              <div class="field">
+                <label>API Key</label>
+              <input type="text" name="api_key" value="Upcoming feature" disabled/>
+              </div>
+              <div class="field">
+                <label>API Secret</label>
+              <input type="text" name="api_secret" value="Upcoming feature" disabled/>
               </div>
               <button class="ui primary labeled icon button" type="submit">
                 <i class="unlock alternate icon"></i>

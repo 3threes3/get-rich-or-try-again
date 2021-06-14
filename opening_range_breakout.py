@@ -46,7 +46,8 @@ def place_opening_range_breakout_orders():
     api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
     # Usando el día de ayer para prevenir problemas durante demos
-    current_date = (date.today() - timedelta(days=4)).isoformat()
+    # current_date = (date.today() - timedelta(days=4)).isoformat()
+    current_date = (date.today()).isoformat()
 
     if is_dst():
         start_minute_bar = f"{current_date} 09:30:00-05:00"
@@ -61,11 +62,15 @@ def place_opening_range_breakout_orders():
 
     messages = []
 
+    messages.append(f'Hi {username} \n Here are the results for your submitted orders: \n\n')
+
     for symbol in symbols:
-        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=4)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
+        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
 
         opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
         opening_range_bars = minute_bars.loc[opening_range_mask]
+
+        print(opening_range_bars)
 
         if not opening_range_bars.empty:
 
@@ -101,7 +106,7 @@ def place_opening_range_breakout_orders():
                                 limit_price=limit_price + opening_range + 0.02,
                             ),
                             stop_loss=dict(
-                                stop_price=limit_price - opening_range - 0.2,
+                                stop_price=limit_price - opening_range - 0.02,
                             )
                         )
                     except Exception as e:
@@ -119,11 +124,21 @@ def place_opening_range_breakout_orders():
         else:
             messages.append(f'Unable to retrieve sufficient data to place order for {symbol}')
 
+    messages.append(f'\n\n Good luck with the trades, \n The team at Get Rich or Try Again')
+    
     with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
         server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
         email_message = f'Subject: Trade Notifications for {current_date}\n\n'
         email_message += "\n\n".join(messages)
-        server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, email_message)
+        cursor.execute("""
+            SELECT email 
+            FROM users
+            WHERE id = ?
+        """, (current_id,))
+
+        current_email = cursor.fetchone()[0]
+
+        server.sendmail(config.EMAIL_ADDRESS, current_email, email_message)
 
     cursor.execute("""
         DELETE FROM stock_strategy

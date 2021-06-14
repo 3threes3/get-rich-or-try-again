@@ -22,7 +22,7 @@
             <tr>
                 <td>{{ user.id }}</td>
                 <td>{{ user.username }}</td>
-                <td>{% if user.admin %} Yes {% else %} No {% endif %}</td>
+                <td>{% if user.admin %} Yes {% else %} <a href="/make_admin/{{ user.id }}">Make admin</a> {% endif %}</td>
                 {% if not user.username == username %}
                     <td><a href="/delete_user/{{ user.id }}">Delete user</a></td>
                 {% else %}
