@@ -46,8 +46,7 @@ def place_opening_range_breakout_orders():
     api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
     # Usando el día de ayer para prevenir problemas durante demos
-    # current_date = (date.today() - timedelta(days=4)).isoformat()
-    current_date = (date.today()).isoformat()
+    current_date = (date.today() - timedelta(days=1)).isoformat()
 
     if is_dst():
         start_minute_bar = f"{current_date} 09:30:00-05:00"
@@ -65,7 +64,7 @@ def place_opening_range_breakout_orders():
     messages.append(f'Hi {username} \n Here are the results for your submitted orders: \n\n')
 
     for symbol in symbols:
-        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
+        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
 
         opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
         opening_range_bars = minute_bars.loc[opening_range_mask]
@@ -125,10 +124,12 @@ def place_opening_range_breakout_orders():
             messages.append(f'Unable to retrieve sufficient data to place order for {symbol}')
 
     messages.append(f'\n\n Good luck with the trades, \n The team at Get Rich or Try Again')
+
+    corrected_email_date = date.today().isoformat()
     
     with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
         server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
-        email_message = f'Subject: Trade Notifications for {current_date}\n\n'
+        email_message = f'Subject: Trade Notifications for {corrected_email_date}\n\n'
         email_message += "\n\n".join(messages)
         cursor.execute("""
             SELECT email 

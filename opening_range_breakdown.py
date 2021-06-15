@@ -45,9 +45,8 @@ def place_opening_range_breakdown_orders():
 
     api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
 
-    # # Usando el día de ayer para prevenir problemas durante demos
-    # current_date = (date.today() - timedelta(days=4)).isoformat()
-    current_date = (date.today()).isoformat()
+    # Usando el día de ayer para prevenir problemas durante demos
+    current_date = (date.today() - timedelta(days=1)).isoformat()
 
     if is_dst():
         start_minute_bar = f"{current_date} 09:30:00-05:00"
@@ -65,7 +64,7 @@ def place_opening_range_breakdown_orders():
     messages.append(f'Hi {username} \n Here are the results for your submitted orders: \n\n')
 
     for symbol in symbols:
-        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
+        minute_bars = api.get_bars(symbol, TimeFrame.Minute, (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()).df
 
         opening_range_mask = (minute_bars.index >= start_minute_bar) & (minute_bars.index < end_minute_bar)
         opening_range_bars = minute_bars.loc[opening_range_mask]
