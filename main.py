@@ -491,17 +491,18 @@ def user_entry(request: Request, username: str = Form(...), email: Optional[str]
     actual_string_bytes = base64.b64decode(base64_bytes)
     actual_string = actual_string_bytes.decode("ascii")
 
-    if current_password == actual_string:
-
-        cursor.execute("""
+    cursor.execute("""
             SELECT email 
             FROM users
             WHERE username = ?
-        """, (username,))
+        """, (config.USERNAME,))
 
-        current_email = cursor.fetchone()[0]
+    current_email = cursor.fetchone()[0]
+
+    if current_password == actual_string:
 
         if current_email != email:
+
             cursor.execute("""
                 SELECT count(*) 
                 FROM users
@@ -511,7 +512,7 @@ def user_entry(request: Request, username: str = Form(...), email: Optional[str]
             users = cursor.fetchone()
 
             if users [0] != 0:
-                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Email already in use"})
+                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "email": current_email, "failure": "Email already in use"})
             else:
                 cursor.execute("""
                     UPDATE users
@@ -530,7 +531,7 @@ def user_entry(request: Request, username: str = Form(...), email: Optional[str]
             users = cursor.fetchone()
 
             if users[0] != 0:
-                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Username not available"})
+                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "email": current_email, "failure": "Username not available"})
             else:
                 cursor.execute("""
                     UPDATE users
@@ -553,7 +554,11 @@ def user_entry(request: Request, username: str = Form(...), email: Optional[str]
                     """, (base64_string, config.USERNAME))
 
     else:
-        return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "failure": "Wrong Password"})
+        if email:
+            pass
+        else:
+            email = current_email
+        return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "email": email, "failure": "Wrong Password"})
         
     connection.commit()
 
