@@ -123,9 +123,11 @@ def place_opening_range_breakdown_orders():
         
     messages.append(f'\n\n Good luck with the trades, \n The team at Get Rich or Try Again')
 
+    corrected_email_date = date.today().isoformat()
+
     with smtplib.SMTP_SSL("smtp.gmail.com", config.EMAIL_PORT, context=context) as server:
         server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
-        email_message = f'Subject: Trade Notifications for {current_date}\n\n'
+        email_message = f'Subject: Trade Notifications for {corrected_email_date}\n\n'
         email_message += "\n\n".join(messages)
 
         cursor.execute("""
