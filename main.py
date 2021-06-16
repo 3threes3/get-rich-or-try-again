@@ -531,7 +531,7 @@ def user_entry(request: Request, username: str = Form(...), email: Optional[str]
             users = cursor.fetchone()
 
             if users[0] != 0:
-                return templates.TemplateResponse("user_profile.html", {"request": request, "username": username, "email": current_email, "failure": "Username not available"})
+                return templates.TemplateResponse("user_profile.html", {"request": request, "username": config.USERNAME, "email": current_email, "failure": "Username not available"})
             else:
                 cursor.execute("""
                     UPDATE users
